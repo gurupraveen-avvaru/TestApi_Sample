@@ -1,0 +1,93 @@
+<html ng-app="myTestApp">
+<head>  
+  <link rel="stylesheet" href="test.css">
+  <link rel="stylesheet" href="/ngDialog-master/css/ngDialog.min.css">
+  <link rel="stylesheet" href="/ngDialog-master/css/ngDialog-theme-default.min.css">
+  <script type="text/javascript" src="angular.min.js"></script>
+  <script src="angular-resource.min.js"></script>
+  <script src="angular-route.js"></script>
+  <script src="/ngDialog-master/js/ngDialog.min.js"></script>
+  <script type="text/javascript">
+      var myTestApp = angular.module("myTestApp",['ngRoute','ngResource','ngDialog']);
+	var test;
+      var serviceURL = "http://localhost:1337/userapp/users/:id";
+	  myTestApp.config(function($routeProvider) {
+			$routeProvider.when('/add',{
+						templateUrl : 'add.html',
+						controller : 'addController'
+			});
+			$routeProvider.when('/getUser',{
+						templateUrl : 'getUser.html',
+						controller : 'getUserController'
+			});
+			$routeProvider.when('/listUsers',{
+						templateUrl : 'listUsers.html',
+						controller : 'listUsersController'
+			});
+	  });
+	  myTestApp.factory("userServiceAPI",["$resource",function($resource){
+	        console.log("Calling.........");
+	        return  $resource(serviceURL,{ id: '@_id' },{
+					update: {
+							method: 'PUT' // this method issues a PUT request
+					}
+			});
+	  }]);	  
+	 myTestApp.controller("listUsersController",["$scope","userServiceAPI","ngDialog",function($scope,userServiceAPI,ngDialog){
+				userServiceAPI.query(function(users){
+				       $scope.users = users;
+                });  
+				$scope.isNotNull = function(user){				
+					if(angular.isUndefined(user.id))
+					     return false;
+					else
+					     return true;
+				};
+				$scope.showModal = function(user){				  
+					  ngDialog.open({
+						template: 'templateId',
+						controller: ['$scope', function($scope) {
+							$scope.user=user;
+							$scope.updateUser = function(user1){
+								 userServiceAPI.update(user1,function(){
+										ngDialog.close();
+								 });
+							}
+						}]
+					  });					 
+				};				
+	  }]).controller("getUserController",["$scope",function($scope){
+	  
+	  }]).controller("addController",["$scope","userServiceAPI",function($scope,userServiceAPI){
+	         $scope.addUser = function(user){
+			       userServiceAPI.save(user,function(){
+				       alert("User Created!!!");
+				   });
+			 };
+	  }]);
+	  
+  </script>
+    <script type="text/ng-template" id="templateId">
+				<form novalidate class="simple-form">					
+				  <div>
+						<label for="userName"> User Name : </label>
+						<input type="text" ng-model="user.name" id="userName"/><br/>
+				  </div>
+				  <br/>
+				 <input type="submit" ng-click="updateUser(user)" value="Save" />
+				</form>
+    </script>
+</head>
+<body>
+  <div id="leftMenu">
+		 <ul>
+			  <li><a href="#add">Add New USer</a></li>
+			  <li><a href="#getUser">Get User</a></li>
+			  <li><a href="#listUsers">List Users</a></li>
+         </ul>
+  </div>
+  <div id="rightMenu">
+		  <div ng-view></div>
+  </div>
+</body>
+</html>
